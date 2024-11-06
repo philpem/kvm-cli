@@ -86,17 +86,26 @@ for p in soup.find_all("param"):
     except KeyError:
         pass
 
-embed = soup("embed")[0]
-embed['port'] = params['PORT']
-embed['port_id'] = params['PORT_ID']
-embed['sslport'] = params['SSLPORT']
-embed['logo'] = False
-embed['logo_off'] = 'no'
-
-with open("viewer.html", "w") as f:
+# Hacks for when "use Sun Java" is enabled
+if 'embed' in soup:
+    embed = soup("embed")[0]
+    embed['port'] = params['PORT']
+    embed['port_id'] = params['PORT_ID']
+    embed['sslport'] = params['SSLPORT']
+    embed['logo'] = False
+    embed['logo_off'] = 'no'
     soup("embed")[0]["archive"] = soup("embed")[0]["cache_archive"]
+
+    jars = [x.strip() for x in soup("embed")[0]["cache_archive"].replace(",", " ").split()]
+else:
+    jars = [x.strip() for x in soup("applet")[0]["archive"].replace(",", " ").split()]
+
+
+# save the fixed viewer.html
+with open("viewer.html", "w") as f:
     f.write(soup.prettify())
-jars = [x.strip() for x in soup("embed")[0]["cache_archive"].replace(",", " ").split()]
+
+# download the jars
 for jar in jars:
     r = s.get(
         "http://%s/%s" % (host, jar),
